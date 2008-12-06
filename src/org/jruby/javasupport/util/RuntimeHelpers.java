@@ -359,7 +359,7 @@ public class RuntimeHelpers {
         
         if (superClass == null) {
             String name = context.getFrameName(); 
-            return callMethodMissing(context, self, klazz.searchMethod(name), name, args, CallType.SUPER, block);
+            return callMethodMissing(context, self, klazz.searchMethod(context.getCurrentFrame().getPackage(), name), name, args, CallType.SUPER, block);
         }
         return invokeAs(context, superClass, self, context.getFrameName(), args, block);
     }
@@ -371,7 +371,7 @@ public class RuntimeHelpers {
         
         if (superClass == null) {
             String name = context.getFrameName(); 
-            return callMethodMissing(context, self, klazz.searchMethod(name), name, CallType.SUPER, block);
+            return callMethodMissing(context, self, klazz.searchMethod(context.getCurrentFrame().getPackage(), name), name, CallType.SUPER, block);
         }
         return invokeAs(context, superClass, self, context.getFrameName(), block);
     }
@@ -383,7 +383,7 @@ public class RuntimeHelpers {
         
         if (superClass == null) {
             String name = context.getFrameName(); 
-            return callMethodMissing(context, self, klazz.searchMethod(name), name, arg0, CallType.SUPER, block);
+            return callMethodMissing(context, self, klazz.searchMethod(context.getCurrentFrame().getPackage(), name), name, arg0, CallType.SUPER, block);
         }
         return invokeAs(context, superClass, self, context.getFrameName(), arg0, block);
     }
@@ -395,7 +395,7 @@ public class RuntimeHelpers {
         
         if (superClass == null) {
             String name = context.getFrameName(); 
-            return callMethodMissing(context, self, klazz.searchMethod(name), name, arg0, arg1, CallType.SUPER, block);
+            return callMethodMissing(context, self, klazz.searchMethod(context.getCurrentFrame().getPackage(), name), name, arg0, arg1, CallType.SUPER, block);
         }
         return invokeAs(context, superClass, self, context.getFrameName(), arg0, arg1, block);
     }
@@ -407,7 +407,7 @@ public class RuntimeHelpers {
         
         if (superClass == null) {
             String name = context.getFrameName(); 
-            return callMethodMissing(context, self, klazz.searchMethod(name), name, arg0, arg1, arg2, CallType.SUPER, block);
+            return callMethodMissing(context, self, klazz.searchMethod(context.getCurrentFrame().getPackage(), name), name, arg0, arg1, arg2, CallType.SUPER, block);
         }
         return invokeAs(context, superClass, self, context.getFrameName(), arg0, arg1, arg2, block);
     }

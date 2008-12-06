@@ -257,7 +257,7 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
             try {
                 IRubyObject receiver = receiverNode.interpret(runtime, context, self, aBlock);
                 RubyClass metaClass = receiver.getMetaClass();
-                DynamicMethod method = metaClass.searchMethod(name);
+                DynamicMethod method = metaClass.searchMethod(context.getCurrentFrame().getPackage(), name);
                 Visibility visibility = method.getVisibility();
 
                 if (visibility != Visibility.PRIVATE && 

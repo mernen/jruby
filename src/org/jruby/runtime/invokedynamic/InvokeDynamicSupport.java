@@ -42,7 +42,7 @@ public class InvokeDynamicSupport {
             break;
         }
 
-        DynamicMethod method = self.getMetaClass().searchMethod(methodName);
+        DynamicMethod method = self.getMetaClass().searchMethod(context.getCurrentFrame().getPackage(), methodName);
         IRubyObject caller = context.getFrameSelf();
         if (shouldCallMethodMissing(method, methodName, caller, callType)) {
             return RuntimeHelpers.callMethodMissing(context, self, method, methodName, callType, Block.NULL_BLOCK);

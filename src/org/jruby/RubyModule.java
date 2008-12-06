@@ -950,7 +950,12 @@ public class RubyModule extends RubyObject {
      * @return The method, or UndefinedMethod if not found
      */    
     public DynamicMethod searchMethod(String name) {
-        return searchWithCache(name).method;
+        return searchMethod(null, name);
+    }
+
+    public DynamicMethod searchMethod(RubySymbol rbPackage, String name) {
+//        System.out.println("SEARCH FOR " + "#" + name + " IN " + (rbPackage != null ? rbPackage.asJavaString() : "<>"));
+        return searchWithCache(rbPackage, name).method;
     }
 
     /**
@@ -970,6 +975,13 @@ public class RubyModule extends RubyObject {
         DynamicMethod method = searchMethodInner(name);
 
         return method != null ? addToCache(name, method, serial) : addToCache(name, UndefinedMethod.getInstance(), serial);
+    }
+
+    public CacheEntry searchWithCache(RubySymbol rbPackage, String name) {
+        if (rbPackage == null) return searchWithCache(name);
+
+        DynamicMethod method = searchMethodInner(rbPackage, name);
+        return new CacheEntry(method != null ? method : UndefinedMethod.getInstance(), 0);
     }
     
     public final int getSerialNumber() {
@@ -996,11 +1008,21 @@ public class RubyModule extends RubyObject {
     }
     
     protected DynamicMethod searchMethodInner(String name) {
-        DynamicMethod method = getMethods().get(name);
+        return searchMethodInner(null, name);
+    }
+
+    protected DynamicMethod searchMethodInner(RubySymbol rbPackage, String name) {
+        DynamicMethod method = getPackageMethods(rbPackage).get(name);
         
         if (method != null) return method;
+
+        if (rbPackage != null) {
+            // if no package-specific method is found, look into the global space
+            method = getMethods().get(name);
+            if (method != null) return method;
+        }
         
-        return superClass == null ? null : superClass.searchMethodInner(name);
+        return superClass == null ? null : superClass.searchMethodInner(rbPackage, name);
     }
 
     protected synchronized void invalidateCacheDescendants() {
@@ -1979,21 +2001,21 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "public_method_defined?", required = 1)
     public IRubyObject public_method_defined(ThreadContext context, IRubyObject symbol) {
-        DynamicMethod method = searchMethod(symbol.asJavaString());
+        DynamicMethod method = searchMethod(context.getCurrentFrame().getPackage(), symbol.asJavaString());
         
         return context.getRuntime().newBoolean(!method.isUndefined() && method.getVisibility() == PUBLIC);
     }
 
     @JRubyMethod(name = "protected_method_defined?", required = 1)
     public IRubyObject protected_method_defined(ThreadContext context, IRubyObject symbol) {
-        DynamicMethod method = searchMethod(symbol.asJavaString());
+        DynamicMethod method = searchMethod(context.getCurrentFrame().getPackage(), symbol.asJavaString());
 	    
         return context.getRuntime().newBoolean(!method.isUndefined() && method.getVisibility() == PROTECTED);
     }
 	
     @JRubyMethod(name = "private_method_defined?", required = 1)
     public IRubyObject private_method_defined(ThreadContext context, IRubyObject symbol) {
-        DynamicMethod method = searchMethod(symbol.asJavaString());
+        DynamicMethod method = searchMethod(context.getCurrentFrame().getPackage(), symbol.asJavaString());
 	    
         return context.getRuntime().newBoolean(!method.isUndefined() && method.getVisibility() == PRIVATE);
     }

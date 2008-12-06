@@ -196,7 +196,7 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
             try {
                 IRubyObject receiver = receiverNode.interpret(runtime, context, self, aBlock);
                 RubyClass metaClass = receiver.getMetaClass();
-                DynamicMethod method = metaClass.searchMethod(getName());
+                DynamicMethod method = metaClass.searchMethod(context.getCurrentFrame().getPackage(), getName());
                 Visibility visibility = method.getVisibility();
                 
                 if (visibility != Visibility.PRIVATE &&
