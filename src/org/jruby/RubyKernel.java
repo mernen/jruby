@@ -1339,4 +1339,10 @@ public class RubyKernel {
         block.getBinding().getFrame().setPackage(packageName);
         return block.yield(context, false);
     }
+
+    @JRubyMethod(name = "current_package", module = true, visibility = PRIVATE)
+    public static IRubyObject current_package(ThreadContext context, IRubyObject recv) {
+        RubySymbol rbPackage = context.getCurrentFrame().getPackage();
+        return rbPackage == null ? context.getRuntime().getNil() : rbPackage;
+    }
 }
