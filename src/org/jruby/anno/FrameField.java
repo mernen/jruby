@@ -1,5 +1,5 @@
 package org.jruby.anno;
 
 public enum FrameField {
-    LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF;
+    LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, PACKAGE_VISIBILITY;
 }

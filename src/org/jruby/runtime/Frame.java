@@ -33,6 +33,7 @@
 package org.jruby.runtime;
 
 import org.jruby.RubyModule;
+import org.jruby.RubySymbol;
 import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -85,6 +86,11 @@ public final class Frame implements JumpTarget {
     /** The current visibility for anything defined under this frame */
     private Visibility visibility = Visibility.PUBLIC;
     
+    /** Package context in which this frame runs */
+    private RubySymbol rbPackage;
+    /** The context in which methods are defined. */
+    private RubySymbol packageVisibility;
+
     /** The target for non-local jumps, like return from a block */
     private final JumpTarget jumpTarget;
     
@@ -127,6 +133,8 @@ public final class Frame implements JumpTarget {
         this.visibility = frame.visibility;
         this.isBindingFrame = frame.isBindingFrame;
         this.jumpTarget = frame.jumpTarget;
+        this.rbPackage = frame.rbPackage;
+        this.packageVisibility = frame.packageVisibility;
         
         // we force the lazy allocation of backref/lastline here to allow
         // closures to update the original frame
@@ -176,6 +184,7 @@ public final class Frame implements JumpTarget {
         this.block = frame.block;
         this.visibility = frame.visibility;
         this.isBindingFrame = frame.isBindingFrame;
+        this.rbPackage = frame.rbPackage;
         
         // we force the lazy allocation of backref/lastline here to allow
         // closures to update the original frame
@@ -239,6 +248,8 @@ public final class Frame implements JumpTarget {
         this.klazz = null;
         this.block = Block.NULL_BLOCK;
         this.backrefAndLastline = null;
+        this.rbPackage = null;
+        this.packageVisibility = null;
     }
     
     /**
@@ -486,5 +497,21 @@ public final class Frame implements JumpTarget {
         if (name != null) sb.append(" in ").append(name);
 
         return sb.toString();
+    }
+
+    public RubySymbol getPackage() {
+        return rbPackage;
+    }
+
+    public void setPackage(RubySymbol rbPackage) {
+        this.rbPackage = rbPackage;
+    }
+
+    public RubySymbol getPackageVisibility() {
+        return packageVisibility;
+    }
+
+    public void setPackageVisibility(RubySymbol rbPackage) {
+        this.packageVisibility = rbPackage;
     }
 }

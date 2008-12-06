@@ -2941,4 +2941,14 @@ public class RubyModule extends RubyObject {
     protected IRubyObject constantTableRemove(String name) {
         return constants.remove(name);
     }
+
+    @JRubyMethod(name = "package_local", visibility = PRIVATE, writes = PACKAGE_VISIBILITY)
+    public RubyModule package_local(ThreadContext context) {
+        RubySymbol rbPackage = context.getCurrentFrame().getPackage();
+        if (rbPackage == null) {
+            throw context.getRuntime().newRuntimeError("package_local: not running in a package context");
+        }
+        context.setCurrentPackageVisibility(rbPackage);
+        return this;
+    }
 }

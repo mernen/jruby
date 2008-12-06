@@ -46,6 +46,7 @@ import org.jruby.RubyObject;
 import org.jruby.RubyKernel.CatchTarget;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.RubyThread;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException.ReturnJump;
@@ -486,6 +487,10 @@ public final class ThreadContext {
         getCurrentFrame().setVisibility(visibility);
     }
     
+    public void setCurrentPackageVisibility(RubySymbol rbPackage) {
+        getCurrentFrame().setPackageVisibility(rbPackage);
+    }
+
     public void pollThreadEvents() {
         getThread().pollThreadEvents(this);
     }

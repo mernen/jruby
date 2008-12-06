@@ -60,6 +60,7 @@ import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.JumpTarget;
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Frame;
@@ -1328,5 +1329,14 @@ public class RubyKernel {
         Frame f = context.getCurrentFrame();
         String name = f != null ? f.getName() : null;
         return name != null ? context.getRuntime().newSymbol(name) : context.getRuntime().getNil();
+    }
+
+    @JRubyMethod(name = "package", frame = true, module = true, visibility = PRIVATE)
+    public static IRubyObject rbPackage(ThreadContext context, IRubyObject recv, IRubyObject vPackage, Block block) {
+        RubySymbol packageName = (RubySymbol) TypeConverter.convertToType(vPackage, context.getRuntime().getSymbol(), "to_sym");
+        block = block.cloneBlock();
+        block.getBinding().setPackage(packageName);
+        block.getBinding().getFrame().setPackage(packageName);
+        return block.yield(context, false);
     }
 }

@@ -33,6 +33,7 @@
 package org.jruby.runtime;
 
 import org.jruby.RubyModule;
+import org.jruby.RubySymbol;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -45,6 +46,11 @@ public class Binding {
      */
     private final Frame frame;
     private final RubyModule klass;
+
+    /**
+     * Package context in which the block runs
+     */
+    private RubySymbol rbPackage;
 
     private Visibility visibility;
     /**
@@ -59,19 +65,22 @@ public class Binding {
     
     public Binding(IRubyObject self, Frame frame,
             Visibility visibility, RubyModule klass, DynamicScope dynamicScope) {
+        this(self, frame, visibility, klass, dynamicScope, null);
+    }
+
+    public Binding(IRubyObject self, Frame frame,
+            Visibility visibility, RubyModule klass, DynamicScope dynamicScope,
+            RubySymbol rbPackage) {
         this.self = self;
         this.frame = frame.duplicate();
         this.visibility = visibility;
         this.klass = klass;
         this.dynamicScope = dynamicScope;
+        this.rbPackage = rbPackage;
     }
     
     public Binding(Frame frame, RubyModule bindingClass, DynamicScope dynamicScope) {
-        this.self = frame.getSelf();
-        this.frame = frame.duplicate();
-        this.visibility = frame.getVisibility();
-        this.klass = bindingClass;
-        this.dynamicScope = dynamicScope;
+        this(frame.getSelf(), frame, frame.getVisibility(), bindingClass, dynamicScope, frame.getPackage());
     }
 
     public Binding cloneBinding() {
@@ -135,5 +144,13 @@ public class Binding {
      */
     public boolean isGiven() {
         return true;
+    }
+
+    public RubySymbol getPackage() {
+        return rbPackage;
+    }
+
+    public void setPackage(RubySymbol rbPackage) {
+        this.rbPackage = rbPackage;
     }
 }
