@@ -189,9 +189,6 @@ public class RubyModule extends RubyObject {
     private final Map<String, DynamicMethod> methods = new ConcurrentHashMap<String, DynamicMethod>(12, 0.75f, 1);
     private final Map<String, CacheEntry> cachedMethods = new ConcurrentHashMap<String, CacheEntry>(12, 0.75f, 1);
 
-    private final Map<RubySymbol, Map<String, DynamicMethod>> packageMethods =
-            new ConcurrentHashMap<RubySymbol, Map<String, DynamicMethod>>();
-    
     protected static class Generation {
         public volatile int hash;
         public Generation() {
@@ -352,20 +349,6 @@ public class RubyModule extends RubyObject {
         return methods;
     }
 
-    public Map<String, DynamicMethod> getPackageMethods(RubySymbol rbPackage) {
-        if (rbPackage == null) {
-            return getMethods();
-        }
-        else {
-            Map<String, DynamicMethod> map = packageMethods.get(rbPackage);
-            if (map == null) {
-                map = new ConcurrentHashMap<String, DynamicMethod>();
-                packageMethods.put(rbPackage, map);
-            }
-            return map;
-        }
-    }
-    
 
     // note that addMethod now does its own put, so any change made to
     // functionality here should be made there as well 
@@ -909,7 +892,8 @@ public class RubyModule extends RubyObject {
         // We can safely reference methods here instead of doing getMethods() since if we
         // are adding we are not using a IncludedModuleWrapper.
         synchronized(getMethods()) {
-            getPackageMethods(packageVisibility).put(name, method);
+            String entryName = packageVisibility != null ? packageVisibility.asJavaString() + ":" + name : name;
+            getMethods().put(entryName, method);
             invalidateCacheDescendants();
         }
     }
@@ -927,7 +911,9 @@ public class RubyModule extends RubyObject {
         // We can safely reference methods here instead of doing getMethods() since if we
         // are adding we are not using a IncludedModuleWrapper.
         synchronized(getMethods()) {
-            DynamicMethod method = (DynamicMethod) getMethods().remove(name);
+            RubySymbol packageVisibility = context.getCurrentFrame().getPackageVisibility();
+            String entryName = packageVisibility != null ? packageVisibility.asJavaString() + ":" + name : name;
+            DynamicMethod method = (DynamicMethod) getMethods().remove(entryName);
             if (method == null) {
                 throw runtime.newNameError("method '" + name + "' not defined in " + getName(), name);
             }
@@ -954,7 +940,6 @@ public class RubyModule extends RubyObject {
     }
 
     public DynamicMethod searchMethod(RubySymbol rbPackage, String name) {
-//        System.out.println("SEARCH FOR " + "#" + name + " IN " + (rbPackage != null ? rbPackage.asJavaString() : "<>"));
         return searchWithCache(rbPackage, name).method;
     }
 
@@ -965,23 +950,21 @@ public class RubyModule extends RubyObject {
      * @return The method, or UndefinedMethod if not found
      */    
     public CacheEntry searchWithCache(String name) {
-        CacheEntry entry = cacheHit(name);
+        return searchWithCache(null, name);
+    }
+
+    public CacheEntry searchWithCache(RubySymbol rbPackage, String name) {
+        String entryName = rbPackage == null ? name : rbPackage.asJavaString() + ":" + name;
+        CacheEntry entry = cacheHit(entryName);
 
         if (entry != null) return entry;
 
         // we grab serial number first; the worst that will happen is we cache a later
         // update with an earlier serial number, which would just flush anyway
         int serial = getSerialNumber();
-        DynamicMethod method = searchMethodInner(name);
-
-        return method != null ? addToCache(name, method, serial) : addToCache(name, UndefinedMethod.getInstance(), serial);
-    }
-
-    public CacheEntry searchWithCache(RubySymbol rbPackage, String name) {
-        if (rbPackage == null) return searchWithCache(name);
-
         DynamicMethod method = searchMethodInner(rbPackage, name);
-        return new CacheEntry(method != null ? method : UndefinedMethod.getInstance(), 0);
+
+        return method != null ? addToCache(entryName, method, serial) : addToCache(entryName, UndefinedMethod.getInstance(), serial);
     }
     
     public final int getSerialNumber() {
@@ -1012,16 +995,16 @@ public class RubyModule extends RubyObject {
     }
 
     protected DynamicMethod searchMethodInner(RubySymbol rbPackage, String name) {
-        DynamicMethod method = getPackageMethods(rbPackage).get(name);
-        
-        if (method != null) return method;
-
         if (rbPackage != null) {
-            // if no package-specific method is found, look into the global space
-            method = getMethods().get(name);
+            String entryName = rbPackage.asJavaString() + ":" + name;
+            DynamicMethod method = getMethods().get(entryName);
             if (method != null) return method;
         }
         
+        // if no package-specific method is found, look into the global space
+        DynamicMethod method = getMethods().get(name);
+        if (method != null) return method;
+
         return superClass == null ? null : superClass.searchMethodInner(rbPackage, name);
     }
 
