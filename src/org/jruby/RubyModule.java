@@ -188,6 +188,9 @@ public class RubyModule extends RubyObject {
     private final Map<String, IRubyObject> constants = new ConcurrentHashMap<String, IRubyObject>();
     private final Map<String, DynamicMethod> methods = new ConcurrentHashMap<String, DynamicMethod>(12, 0.75f, 1);
     private final Map<String, CacheEntry> cachedMethods = new ConcurrentHashMap<String, CacheEntry>(12, 0.75f, 1);
+
+    private final Map<RubySymbol, Map<String, DynamicMethod>> packageMethods =
+            new ConcurrentHashMap<RubySymbol, Map<String, DynamicMethod>>();
     
     protected static class Generation {
         public volatile int hash;
@@ -347,6 +350,20 @@ public class RubyModule extends RubyObject {
 
     public Map<String, DynamicMethod> getMethods() {
         return methods;
+    }
+
+    public Map<String, DynamicMethod> getPackageMethods(RubySymbol rbPackage) {
+        if (rbPackage == null) {
+            return getMethods();
+        }
+        else {
+            Map<String, DynamicMethod> map = packageMethods.get(rbPackage);
+            if (map == null) {
+                map = new ConcurrentHashMap<String, DynamicMethod>();
+                packageMethods.put(rbPackage, map);
+            }
+            return map;
+        }
     }
     
 
@@ -866,8 +883,12 @@ public class RubyModule extends RubyObject {
         return context.getRuntime().getFalse();
     }
 
-    // TODO: Consider a better way of synchronizing 
     public void addMethod(String name, DynamicMethod method) {
+        addMethod(null, name, method);
+    }
+
+    // TODO: Consider a better way of synchronizing 
+    public void addMethod(RubySymbol packageVisibility, String name, DynamicMethod method) {
         Ruby runtime = getRuntime();
         
         if (this == runtime.getObject()) runtime.secure(4);
@@ -877,14 +898,18 @@ public class RubyModule extends RubyObject {
         }
         testFrozen("class/module");
 
-        addMethodInternal(name, method);
+        addMethodInternal(packageVisibility, name, method);
     }
 
     public void addMethodInternal(String name, DynamicMethod method) {
+        addMethodInternal(null, name, method);
+    }
+
+    public void addMethodInternal(RubySymbol packageVisibility, String name, DynamicMethod method) {
         // We can safely reference methods here instead of doing getMethods() since if we
         // are adding we are not using a IncludedModuleWrapper.
         synchronized(getMethods()) {
-            getMethods().put(name, method);
+            getPackageMethods(packageVisibility).put(name, method);
             invalidateCacheDescendants();
         }
     }

@@ -185,6 +185,7 @@ public final class Frame implements JumpTarget {
         this.visibility = frame.visibility;
         this.isBindingFrame = frame.isBindingFrame;
         this.rbPackage = frame.rbPackage;
+        this.packageVisibility = frame.packageVisibility;
         
         // we force the lazy allocation of backref/lastline here to allow
         // closures to update the original frame
